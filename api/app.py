@@ -1,8 +1,10 @@
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from studio_midi.backend import AlsaBackend
 from studio_midi.router import Router
@@ -39,6 +41,10 @@ def create_app() -> FastAPI:
     app.include_router(ports.router, prefix="/api/ports", tags=["ports"])
     app.include_router(connections.router, prefix="/api/routes", tags=["routes"])
     app.include_router(scenes.router, prefix="/api/scenes", tags=["scenes"])
+
+    frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+    if frontend_dist.is_dir():
+        app.mount("/", StaticFiles(directory=frontend_dist, html=True), name="frontend")
 
     return app
 
