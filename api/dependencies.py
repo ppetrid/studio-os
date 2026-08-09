@@ -1,11 +1,11 @@
 from fastapi import Request
 
-from studio_midi.backend import AlsaBackend
+from studio_midi.backend import Backend
 from studio_midi.router import Router
 from studio_midi.scenes import SceneStore
 
 
-def get_backend(request: Request) -> AlsaBackend:
+def get_backend(request: Request) -> Backend:
     return request.app.state.backend
 
 

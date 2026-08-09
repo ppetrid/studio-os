@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -6,7 +7,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from studio_midi.backend import AlsaBackend
+from studio_midi.backend import AlsaBackend, Backend
+from studio_midi.mock_backend import MockBackend
 from studio_midi.router import Router
 from studio_midi.scenes import SceneStore
 
@@ -14,9 +16,15 @@ from .endpoints import connections, ports, scenes
 from .errors import register_exception_handlers
 
 
+def _make_backend() -> Backend:
+    if os.environ.get("STUDIO_MIDI_BACKEND", "").strip().lower() == "mock":
+        return MockBackend()
+    return AlsaBackend()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    backend = AlsaBackend()
+    backend = _make_backend()
     app.state.backend = backend
     app.state.router = Router(backend)
     app.state.scenes = SceneStore()

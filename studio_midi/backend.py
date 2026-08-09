@@ -11,30 +11,26 @@ class AmbiguousPortError(RuntimeError):
     pass
 
 
-class AlsaBackend:
-    def __init__(self, client_name: str = "studio-router") -> None:
-        self.client = SequencerClient(client_name)
-
-    def close(self) -> None:
-        self.client.close()
+class Backend:
+    """
+    Common interface + port-matching logic shared by every backend
+    implementation (real ALSA, mock, ...).
+    """
 
     def list_sources(self) -> list[PortInfo]:
-        """
-        Ports that can send MIDI to another ALSA client.
-        """
-        return self.client.list_ports(
-            input=True,
-            type=PortType.MIDI_GENERIC | PortType.HARDWARE,
-        )
+        raise NotImplementedError
 
     def list_destinations(self) -> list[PortInfo]:
-        """
-        Ports that can receive MIDI from another ALSA client.
-        """
-        return self.client.list_ports(
-            output=True,
-            type=PortType.MIDI_GENERIC | PortType.HARDWARE,
-        )
+        raise NotImplementedError
+
+    def connect(self, source: PortInfo, destination: PortInfo) -> None:
+        raise NotImplementedError
+
+    def disconnect(self, source: PortInfo, destination: PortInfo) -> None:
+        raise NotImplementedError
+
+    def close(self) -> None:
+        raise NotImplementedError
 
     def resolve_source(self, endpoint: Endpoint) -> PortInfo:
         return self._resolve(
@@ -49,20 +45,6 @@ class AlsaBackend:
             ports=self.list_destinations(),
             role="destination",
         )
-
-    def connect(
-        self,
-        source: PortInfo,
-        destination: PortInfo,
-    ) -> None:
-        self.client.subscribe_port(source, destination)
-
-    def disconnect(
-        self,
-        source: PortInfo,
-        destination: PortInfo,
-    ) -> None:
-        self.client.unsubscribe_port(source, destination)
 
     def _resolve(
         self,
@@ -110,3 +92,43 @@ class AlsaBackend:
             )
 
         return matches[0]
+
+
+class AlsaBackend(Backend):
+    def __init__(self, client_name: str = "studio-router") -> None:
+        self.client = SequencerClient(client_name)
+
+    def close(self) -> None:
+        self.client.close()
+
+    def list_sources(self) -> list[PortInfo]:
+        """
+        Ports that can send MIDI to another ALSA client.
+        """
+        return self.client.list_ports(
+            input=True,
+            type=PortType.MIDI_GENERIC | PortType.HARDWARE,
+        )
+
+    def list_destinations(self) -> list[PortInfo]:
+        """
+        Ports that can receive MIDI from another ALSA client.
+        """
+        return self.client.list_ports(
+            output=True,
+            type=PortType.MIDI_GENERIC | PortType.HARDWARE,
+        )
+
+    def connect(
+        self,
+        source: PortInfo,
+        destination: PortInfo,
+    ) -> None:
+        self.client.subscribe_port(source, destination)
+
+    def disconnect(
+        self,
+        source: PortInfo,
+        destination: PortInfo,
+    ) -> None:
+        self.client.unsubscribe_port(source, destination)

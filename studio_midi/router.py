@@ -1,4 +1,4 @@
-from .backend import AlsaBackend
+from .backend import Backend
 from .models import Route
 
 
@@ -7,7 +7,7 @@ class ProcessedRouteNotImplementedError(NotImplementedError):
 
 
 class Router:
-    def __init__(self, backend: AlsaBackend) -> None:
+    def __init__(self, backend: Backend) -> None:
         self.backend = backend
 
         # Routes created during this application process.
