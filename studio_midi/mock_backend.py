@@ -15,6 +15,8 @@ SEED_PORTS = {
         {"client_id": 3, "port_id": 1, "client_name": "Hammond Xk-3", "name": "MIDI OUT 1"},
         {"client_id": 4, "port_id": 1, "client_name": "Kurzweil PC-3X", "name": "MIDI OUT 1"},
         {"client_id": 5, "port_id": 1, "client_name": "Novation BassStation", "name": "MIDI OUT 1"},
+        {"client_id": 6, "port_id": 1, "client_name": "Yamaha TG77", "name": "MIDI OUT 1"},
+        {"client_id": 7, "port_id": 1, "client_name": "Arturia Beatstep", "name": "MIDI OUT 1"},
     ],
     "destinations": [
         {"client_id": 1, "port_id": 1, "client_name": "Yamaha CP88", "name": "MIDI IN 1"},
@@ -22,6 +24,8 @@ SEED_PORTS = {
         {"client_id": 3, "port_id": 1, "client_name": "Hammond Xk-3", "name": "MIDI IN 1"},
         {"client_id": 4, "port_id": 1, "client_name": "Kurzweil PC-3X", "name": "MIDI IN 1"},
         {"client_id": 5, "port_id": 1, "client_name": "Novation BassStation", "name": "MIDI IN 1"},
+        {"client_id": 6, "port_id": 1, "client_name": "Yamaha TG77", "name": "MIDI IN 1"},
+        {"client_id": 7, "port_id": 1, "client_name": "Dreadbox Erebus", "name": "MIDI IN 1"},
     ],
 }
 

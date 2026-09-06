@@ -1,9 +1,24 @@
 # studio-os
 
-## Run the api server
+## Run the development server
 
-`uvicorn api.app:app --reload`
+### Python
+
+```shell
+uvicorn api.app:app --reload
+```
 
 To run with mock midi inputs / outputs
 
-`STUDIO_MIDI_BACKEND=mock uvicorn api.app:app --reload`
+```shell
+STUDIO_MIDI_BACKEND=mock uvicorn api.app:app --reload
+```
+
+### UI
+
+```shell
+cd frontent
+npm run dev
+```
+
+Navigate to http://localhost:5173/

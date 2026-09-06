@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
+from studio_midi.aliases import AliasStore
 from studio_midi.backend import AlsaBackend, Backend
 from studio_midi.mock_backend import MockBackend
 from studio_midi.router import Router
@@ -28,6 +29,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.backend = backend
     app.state.router = Router(backend)
     app.state.scenes = SceneStore()
+    app.state.aliases = AliasStore()
     try:
         yield
     finally:

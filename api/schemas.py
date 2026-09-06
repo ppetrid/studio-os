@@ -42,14 +42,16 @@ class PortModel(BaseModel):
     port_id: int | None
     client_name: str | None
     name: str
+    alias: str | None = None
 
     @classmethod
-    def from_domain(cls, port: PortInfo) -> "PortModel":
+    def from_domain(cls, port: PortInfo, alias: str | None = None) -> "PortModel":
         return cls(
             client_id=port.client_id,
             port_id=port.port_id,
             client_name=port.client_name,
             name=port.name,
+            alias=alias,
         )
 
 
