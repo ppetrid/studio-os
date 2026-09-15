@@ -6,3 +6,4 @@ frontend/dist/
 
 mock_connections.json
 mock_ports.json
+mock_aliases.json
