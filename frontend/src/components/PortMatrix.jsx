@@ -1,9 +1,8 @@
 import { Fragment, useState } from 'react'
 import { findRoute, portKey } from '../routeUtils'
 
-// Cells shrink as rows/columns are added, but never below the size that
-// fits this many on screen at once — beyond that the grid scrolls.
-const MIN_VISIBLE_ROWS = 5
+// Columns shrink as they're added, but never below the size that fits
+// this many on screen at once — beyond that the grid scrolls.
 const MIN_VISIBLE_COLS = 14
 
 // Fixed chrome sizes for the header row / label column. These have to be
@@ -14,8 +13,10 @@ const MIN_VISIBLE_COLS = 14
 const HEADER_ROW_HEIGHT = '2.5rem'
 const LABEL_COL_WIDTH = '7rem'
 
-// Absolute floor so rows stay touch-usable even if there are more sources
-// than MIN_VISIBLE_ROWS, or the container is shorter than expected.
+// Absolute floor so rows stay touch-usable when there are enough sources,
+// or the container is short enough, that dividing the available height
+// evenly between them would otherwise shrink rows past this — beyond that
+// the grid scrolls instead of shrinking further.
 const MIN_ROW_HEIGHT = '2.75rem'
 
 function portLabel(port) {
@@ -80,7 +81,7 @@ function PortMatrix({ sources, destinations, routes, pendingKeys, onToggle }) {
         className="grid h-full w-full"
         style={{
           gridTemplateColumns: `${LABEL_COL_WIDTH} repeat(${destinations.length}, minmax(calc((100% - ${LABEL_COL_WIDTH}) / ${MIN_VISIBLE_COLS}), 1fr))`,
-          gridTemplateRows: `${HEADER_ROW_HEIGHT} repeat(${sources.length}, minmax(max(${MIN_ROW_HEIGHT}, calc((100% - ${HEADER_ROW_HEIGHT}) / ${MIN_VISIBLE_ROWS})), 1fr))`,
+          gridTemplateRows: `${HEADER_ROW_HEIGHT} repeat(${sources.length}, minmax(max(${MIN_ROW_HEIGHT}, calc((100% - ${HEADER_ROW_HEIGHT}) / ${sources.length})), 1fr))`,
         }}
       >
         <div className="sticky top-0 left-0 z-20 bg-neutral-900" />
