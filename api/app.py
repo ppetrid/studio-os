@@ -9,18 +9,38 @@ from fastapi.staticfiles import StaticFiles
 
 from studio_midi.aliases import AliasStore
 from studio_midi.backend import AlsaBackend, Backend
-from studio_midi.mock_backend import MockBackend
+from studio_midi.mock_backend import SEED_ALIASES, MockBackend
 from studio_midi.router import Router
 from studio_midi.scenes import SceneStore
 
 from .endpoints import connections, ports, scenes
 from .errors import register_exception_handlers
 
+MOCK_ALIASES_PATH = "mock_aliases.json"
+
+
+def _mock_mode() -> bool:
+    return os.environ.get("STUDIO_MIDI_BACKEND", "").strip().lower() == "mock"
+
 
 def _make_backend() -> Backend:
-    if os.environ.get("STUDIO_MIDI_BACKEND", "").strip().lower() == "mock":
+    if _mock_mode():
         return MockBackend()
     return AlsaBackend()
+
+
+def _make_alias_store() -> AliasStore:
+    if not _mock_mode():
+        return AliasStore()
+
+    store = AliasStore(path=MOCK_ALIASES_PATH)
+
+    if not store.path.exists():
+        for client_name, ports_ in SEED_ALIASES.items():
+            for port_name, alias in ports_.items():
+                store.set(client_name, port_name, alias)
+
+    return store
 
 
 @asynccontextmanager
@@ -29,7 +49,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.backend = backend
     app.state.router = Router(backend)
     app.state.scenes = SceneStore()
-    app.state.aliases = AliasStore()
+    app.state.aliases = _make_alias_store()
     try:
         yield
     finally:

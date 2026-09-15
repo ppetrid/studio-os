@@ -29,6 +29,20 @@ SEED_PORTS = {
     ],
 }
 
+# A few fake devices pre-aliased, so the UI has something to show for the
+# feature out of the box. The rest are left unaliased on purpose, to also
+# exercise the fall-back-to-real-name path.
+SEED_ALIASES = {
+    "Hammond Xk-3": {
+        "MIDI OUT 1": "Organ Rig Out",
+        "MIDI IN 1": "Organ Rig In",
+    },
+    "Kurzweil PC-3X": {
+        "MIDI OUT 1": "Stage Piano Out",
+        "MIDI IN 1": "Stage Piano In",
+    },
+}
+
 
 def _port_from_dict(data: dict) -> PortInfo:
     port = PortInfo(

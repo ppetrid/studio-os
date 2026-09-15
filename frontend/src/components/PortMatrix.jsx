@@ -19,7 +19,19 @@ const LABEL_COL_WIDTH = '7rem'
 const MIN_ROW_HEIGHT = '2.75rem'
 
 function portLabel(port) {
-  return `${port.client_name ?? '(unknown)'} · ${port.name}`
+  const realName = `${port.client_name ?? '(unknown)'} · ${port.name}`
+  return port.alias ? `${port.alias} (${realName})` : realName
+}
+
+// Primary label: the alias when the port has one, else the device name.
+function portPrimaryLabel(port) {
+  return port.alias || port.client_name || '(unknown)'
+}
+
+// Secondary (muted) label: real device · port name, so the physical port
+// stays identifiable even when the primary label is an alias.
+function portSecondaryLabel(port) {
+  return port.alias ? `${port.client_name ?? '(unknown)'} · ${port.name}` : port.name
 }
 
 function TapLabel({ id, tooltip, openId, onOpen, tooltipClassName, children }) {
@@ -92,10 +104,10 @@ function PortMatrix({ sources, destinations, routes, pendingKeys, onToggle }) {
                     hoveredDest === destKey ? 'text-amber-300' : 'text-neutral-300'
                   }`}
                 >
-                  {dest.client_name ?? '(unknown)'}
+                  {portPrimaryLabel(dest)}
                 </div>
                 <div className="truncate text-center text-[10px] text-neutral-500">
-                  {dest.name}
+                  {portSecondaryLabel(dest)}
                 </div>
               </TapLabel>
             </div>
@@ -119,10 +131,10 @@ function PortMatrix({ sources, destinations, routes, pendingKeys, onToggle }) {
                       hoveredSource === srcKey ? 'text-amber-300' : 'text-neutral-200'
                     }`}
                   >
-                    {src.client_name ?? '(unknown)'}
+                    {portPrimaryLabel(src)}
                   </div>
                   <div className="truncate text-right text-[10px] text-neutral-500">
-                    {src.name}
+                    {portSecondaryLabel(src)}
                   </div>
                 </TapLabel>
               </div>

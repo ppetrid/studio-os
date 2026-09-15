@@ -17,10 +17,12 @@ function PortList({ title, ports, loading, error }) {
               className="min-w-0 py-1"
             >
               <div className="truncate font-medium text-neutral-100">
-                {port.client_name ?? '(unknown)'}
+                {port.alias || port.client_name || '(unknown)'}
               </div>
               <div className="truncate text-sm text-neutral-400">
-                {port.name}{' '}
+                {port.alias
+                  ? `${port.client_name ?? '(unknown)'} · ${port.name}`
+                  : port.name}{' '}
                 <span className="text-neutral-600">
                   ({port.client_id}:{port.port_id})
                 </span>
