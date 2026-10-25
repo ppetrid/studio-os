@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from alsa_midi import PortInfo, PortType, SequencerClient
+from alsa_midi import PortInfo, PortType, SequencerClient, SubscriptionQueryType
 from .models import Endpoint
 
 
@@ -27,6 +27,12 @@ class Backend:
         raise NotImplementedError
 
     def disconnect(self, source: PortInfo, destination: PortInfo) -> None:
+        raise NotImplementedError
+
+    def list_connections(self) -> list[tuple[PortInfo, PortInfo]]:
+        """
+        Existing (source, destination) connections between listed ports.
+        """
         raise NotImplementedError
 
     def close(self) -> None:
@@ -132,3 +138,31 @@ class AlsaBackend(Backend):
         destination: PortInfo,
     ) -> None:
         self.client.unsubscribe_port(source, destination)
+
+    def list_connections(self) -> list[tuple[PortInfo, PortInfo]]:
+        """
+        Live ALSA subscriptions from a listed source to a listed destination.
+
+        ALSA keeps these after the client that created them exits, so this
+        includes connections made by earlier runs of this app or by other
+        tools (e.g. `aconnect`).
+        """
+        destinations = {
+            (port.client_id, port.port_id): port
+            for port in self.list_destinations()
+        }
+        connections = []
+
+        for source in self.list_sources():
+            subscribers = self.client.list_port_subscribers(
+                source,
+                type=SubscriptionQueryType.READ,
+            )
+
+            for subscriber in subscribers:
+                destination = destinations.get(tuple(subscriber.addr))
+
+                if destination is not None:
+                    connections.append((source, destination))
+
+        return connections

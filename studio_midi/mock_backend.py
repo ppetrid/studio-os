@@ -104,6 +104,24 @@ class MockBackend(Backend):
             connections.remove(pair)
             self._write_json(self.connections_path, connections)
 
+    def list_connections(self) -> list[tuple[PortInfo, PortInfo]]:
+        sources = {tuple(_port_key(port)): port for port in self.list_sources()}
+        destinations = {
+            tuple(_port_key(port)): port for port in self.list_destinations()
+        }
+        connections = []
+
+        for source_key, destination_key in self._read_connections():
+            source = sources.get(tuple(source_key))
+            destination = destinations.get(tuple(destination_key))
+
+            # Skip connections to ports since removed from the ports file,
+            # the way ALSA drops them when a device is unplugged.
+            if source is not None and destination is not None:
+                connections.append((source, destination))
+
+        return connections
+
     def _read_ports(self) -> dict:
         if not self.ports_path.exists():
             return SEED_PORTS

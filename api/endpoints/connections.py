@@ -21,7 +21,7 @@ def _sort_key(route: Route) -> tuple:
 
 @router.get("", response_model=list[RouteModel])
 def list_routes(midi_router: Router = Depends(get_midi_router)):
-    routes = sorted(midi_router.managed_routes, key=_sort_key)
+    routes = sorted(midi_router.routes, key=_sort_key)
     return [RouteModel.from_domain(route) for route in routes]
 
 

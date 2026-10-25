@@ -42,4 +42,4 @@ def activate_scene(
     midi_router: Router = Depends(get_midi_router),
 ):
     scenes.activate(name, midi_router)
-    return [RouteModel.from_domain(r) for r in midi_router.managed_routes]
+    return [RouteModel.from_domain(r) for r in midi_router.routes]
