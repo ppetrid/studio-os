@@ -5,6 +5,10 @@ from .models import Endpoint, Route
 from .router import Router
 
 
+class SceneNotFoundError(RuntimeError):
+    pass
+
+
 class SceneStore:
     def __init__(self, path: str | Path = "scenes.json") -> None:
         self.path = Path(path)
@@ -15,10 +19,8 @@ class SceneStore:
     def get(self, name: str) -> set[Route]:
         scenes = self._load_raw()
 
-        try:
-            raw_routes = scenes[name]
-        except KeyError as exc:
-            raise KeyError(f"Unknown scene: {name!r}") from exc
+        if name not in scenes:
+            raise SceneNotFoundError(f"Unknown scene: {name!r}")
 
         return {
             Route(
@@ -26,7 +28,7 @@ class SceneStore:
                 destination=Endpoint(**item["destination"]),
                 processor=item.get("processor"),
             )
-            for item in raw_routes
+            for item in scenes[name]
         }
 
     def save(self, name: str, routes: set[Route]) -> None:
@@ -57,7 +59,7 @@ class SceneStore:
         scenes = self._load_raw()
 
         if name not in scenes:
-            raise KeyError(f"Unknown scene: {name!r}")
+            raise SceneNotFoundError(f"Unknown scene: {name!r}")
 
         del scenes[name]
 

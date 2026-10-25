@@ -69,7 +69,11 @@ The backend is a Python package, `studio_midi/`, with no web dependencies. A thi
 
 - `app.py` builds the backend, `Router`, `SceneStore` and `AliasStore` once at startup (`lifespan`) and puts them on `app.state`. `dependencies.py` hands them to endpoints through `Depends`.
 - `schemas.py` contains Pydantic models with `to_domain()` / `from_domain()` that convert to and from the `studio_midi` dataclasses. It imports `alsa_midi.PortInfo`, so `alsa-midi` (and the system libasound) is needed even in mock mode.
-- `errors.py` maps domain exceptions to HTTP statuses. It maps **every** `KeyError` to 404, which is meant for unknown scenes. A bug that raises `KeyError` will therefore show up as a 404, not a 500.
+- `errors.py` maps the domain exceptions to HTTP statuses:
+  - `PortNotFoundError` and `SceneNotFoundError` → 404
+  - `AmbiguousPortError` → 400
+  - `ProcessedRouteNotImplementedError` → 501
+  - Anything else is a 500. Signal a new expected failure with its own exception class, not a built-in like `KeyError`.
 - Routes:
   - `/api/ports/{sources,destinations}`
   - `/api/routes`: GET lists routes, POST connects, DELETE disconnects. POST and DELETE both take a `RouteModel` JSON body.

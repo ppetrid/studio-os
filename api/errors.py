@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 
 from studio_midi.backend import AmbiguousPortError, PortNotFoundError
 from studio_midi.router import ProcessedRouteNotImplementedError
+from studio_midi.scenes import SceneNotFoundError
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -20,6 +21,6 @@ def register_exception_handlers(app: FastAPI) -> None:
     ) -> JSONResponse:
         return JSONResponse(status_code=501, content={"detail": str(exc)})
 
-    @app.exception_handler(KeyError)
-    def _unknown_scene(request: Request, exc: KeyError) -> JSONResponse:
+    @app.exception_handler(SceneNotFoundError)
+    def _scene_not_found(request: Request, exc: SceneNotFoundError) -> JSONResponse:
         return JSONResponse(status_code=404, content={"detail": str(exc)})
