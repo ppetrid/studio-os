@@ -33,13 +33,13 @@ SEED_PORTS = {
 # feature out of the box. The rest are left unaliased on purpose, to also
 # exercise the fall-back-to-real-name path.
 SEED_ALIASES = {
-    "Hammond Xk-3": {
-        "MIDI OUT 1": "Organ Rig Out",
-        "MIDI IN 1": "Organ Rig In",
+    "sources": {
+        "Hammond Xk-3": {"MIDI OUT 1": "Organ Rig Out"},
+        "Kurzweil PC-3X": {"MIDI OUT 1": "Stage Piano Out"},
     },
-    "Kurzweil PC-3X": {
-        "MIDI OUT 1": "Stage Piano Out",
-        "MIDI IN 1": "Stage Piano In",
+    "destinations": {
+        "Hammond Xk-3": {"MIDI IN 1": "Organ Rig In"},
+        "Kurzweil PC-3X": {"MIDI IN 1": "Stage Piano In"},
     },
 }
 

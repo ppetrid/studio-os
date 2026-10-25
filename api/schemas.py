@@ -1,5 +1,7 @@
+from typing import Annotated
+
 from alsa_midi import PortInfo
-from pydantic import BaseModel
+from pydantic import BaseModel, StringConstraints
 
 from studio_midi.models import Endpoint, Route
 
@@ -53,6 +55,15 @@ class PortModel(BaseModel):
             name=port.name,
             alias=alias,
         )
+
+
+class PortRefModel(BaseModel):
+    client_name: str
+    port_name: str
+
+
+class AliasModel(PortRefModel):
+    alias: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class SceneModel(BaseModel):

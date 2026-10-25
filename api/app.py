@@ -13,7 +13,7 @@ from studio_midi.mock_backend import SEED_ALIASES, MockBackend
 from studio_midi.router import Router
 from studio_midi.scenes import SceneStore
 
-from .endpoints import connections, ports, scenes
+from .endpoints import aliases, connections, ports, scenes
 from .errors import register_exception_handlers
 
 MOCK_ALIASES_PATH = "mock_aliases.json"
@@ -36,9 +36,10 @@ def _make_alias_store() -> AliasStore:
     store = AliasStore(path=MOCK_ALIASES_PATH)
 
     if not store.path.exists():
-        for client_name, ports_ in SEED_ALIASES.items():
-            for port_name, alias in ports_.items():
-                store.set(client_name, port_name, alias)
+        for direction, clients in SEED_ALIASES.items():
+            for client_name, ports_ in clients.items():
+                for port_name, alias in ports_.items():
+                    store.set(direction, client_name, port_name, alias)
 
     return store
 
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
 
     app.include_router(ports.router, prefix="/api/ports", tags=["ports"])
+    app.include_router(aliases.router, prefix="/api/aliases", tags=["aliases"])
     app.include_router(connections.router, prefix="/api/routes", tags=["routes"])
     app.include_router(scenes.router, prefix="/api/scenes", tags=["scenes"])
 

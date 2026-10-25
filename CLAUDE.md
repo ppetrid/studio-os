@@ -12,7 +12,7 @@ Router features and where each one stands:
 |---|---|---|
 | Matrix mode | Conductive Labs MRCC-style source × destination grid; tap a cell to connect or disconnect | Implemented (`MatrixView` / `PortMatrix`) |
 | Preset mode | Save the current routing as a named preset and recall it | Backend only. Called **scenes** in code (`SceneStore`, `/api/scenes`, `scenes.json`); no UI, no `api.js` client functions |
-| Aliases | Friendly port names (e.g. "CP88" instead of "Miditech 8x8 Port 1 - Midi In"), aimed at multi-port 5-pin DIN interfaces | Read-only. `AliasStore` has get/set/delete, but only `get` is exposed (as `alias` on port listings). Edit `aliases.json` by hand for now |
+| Aliases | Friendly port names (e.g. "CP88" instead of "Miditech 8x8 Port 1 - Midi In"), aimed at multi-port 5-pin DIN interfaces | Implemented. Rename ports in the Ports Info view. Sources and destinations are named separately |
 | Pianoteq | Launch and manage headless Pianoteq | Not started |
 | Pi image | Custom image that autostarts the app | Not started |
 
@@ -63,7 +63,7 @@ The backend is a Python package, `studio_midi/`, with no web dependencies. A thi
   - It resolves every desired route first, so a bad port fails before anything changes.
   - It then disconnects everything not in the set, **including connections this app didn't make**, and connects the missing ones.
   - If a connect fails, it tries to restore what it removed.
-- **`scenes.py`** / **`aliases.py`**: JSON-file stores that re-read the file on every call. Scenes are stored as `{name: [route dicts]}`. Aliases are stored as `{client_name: {port_name: alias}}`. Both default to `scenes.json` and `aliases.json` relative to the CWD. In mock mode, scenes still use the real `scenes.json`.
+- **`scenes.py`** / **`aliases.py`**: JSON-file stores that re-read the file on every call. Scenes are stored as `{name: [route dicts]}`. Aliases are stored as `{"sources" | "destinations": {client_name: {port_name: alias}}}`. They're per direction because a multi-port interface reports its In N and Out N jacks as a single ALSA port, and the two jacks may be cabled to different devices. A file in the old format, without the direction keys, raises a `ValueError`. Both default to `scenes.json` and `aliases.json` relative to the CWD. In mock mode, scenes still use the real `scenes.json`.
 
 ### `api/`
 
@@ -75,7 +75,8 @@ The backend is a Python package, `studio_midi/`, with no web dependencies. A thi
   - `ProcessedRouteNotImplementedError` → 501
   - Anything else is a 500. Signal a new expected failure with its own exception class, not a built-in like `KeyError`.
 - Routes:
-  - `/api/ports/{sources,destinations}`
+  - `/api/ports/{sources,destinations}`: each port includes its `alias` for that direction.
+  - `/api/aliases/{sources,destinations}`: PUT sets an alias and DELETE clears it. Both take `client_name` and `port_name` in a JSON body, never in the URL, because client names can contain `/`.
   - `/api/routes`: GET lists routes, POST connects, DELETE disconnects. POST and DELETE both take a `RouteModel` JSON body.
   - `/api/scenes`: list, get, `PUT /{name}` (save), delete, `POST /{name}/activate`.
 - CORS is fully open.

@@ -15,7 +15,9 @@ def list_sources(
     aliases: AliasStore = Depends(get_alias_store),
 ):
     return [
-        PortModel.from_domain(port, alias=aliases.get(port.client_name, port.name))
+        PortModel.from_domain(
+            port, alias=aliases.get("sources", port.client_name, port.name)
+        )
         for port in backend.list_sources()
     ]
 
@@ -26,6 +28,8 @@ def list_destinations(
     aliases: AliasStore = Depends(get_alias_store),
 ):
     return [
-        PortModel.from_domain(port, alias=aliases.get(port.client_name, port.name))
+        PortModel.from_domain(
+            port, alias=aliases.get("destinations", port.client_name, port.name)
+        )
         for port in backend.list_destinations()
     ]
