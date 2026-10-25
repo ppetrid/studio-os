@@ -5,6 +5,9 @@ from pydantic import BaseModel, StringConstraints
 
 from studio_midi.devices import Device, PortRef
 from studio_midi.models import Endpoint, Route
+from studio_midi.presets import DeviceRef, PresetEndpoint, PresetRoute, SkippedRoute
+
+NonBlankStr = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
 
 class EndpointModel(BaseModel):
@@ -71,7 +74,7 @@ class PortRefModel(BaseModel):
 
 
 class DeviceAssignmentModel(PortRefModel):
-    device: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+    device: NonBlankStr
 
 
 class DeviceModel(BaseModel):
@@ -92,6 +95,52 @@ class DeviceModel(BaseModel):
         )
 
 
-class SceneModel(BaseModel):
+class DeviceRefModel(BaseModel):
+    device: str
+
+
+class PresetRouteModel(BaseModel):
+    # Each end is a device name, or a real port for ports without a device.
+    source: DeviceRefModel | PortRefModel
+    destination: DeviceRefModel | PortRefModel
+
+    @classmethod
+    def from_domain(cls, route: PresetRoute) -> "PresetRouteModel":
+        return cls(
+            source=_preset_endpoint_model(route.source),
+            destination=_preset_endpoint_model(route.destination),
+        )
+
+
+def _preset_endpoint_model(endpoint: PresetEndpoint) -> DeviceRefModel | PortRefModel:
+    if isinstance(endpoint, DeviceRef):
+        return DeviceRefModel(device=endpoint.name)
+
+    return PortRefModel.from_domain(endpoint)
+
+
+class PresetModel(BaseModel):
     name: str
+    routes: list[PresetRouteModel]
+
+    # Whether the current routing is exactly what recalling this preset
+    # would produce right now.
+    current: bool
+
+
+class PresetNameModel(BaseModel):
+    name: NonBlankStr
+
+
+class SkippedRouteModel(BaseModel):
+    route: PresetRouteModel
+    reason: str
+
+    @classmethod
+    def from_domain(cls, skipped: SkippedRoute) -> "SkippedRouteModel":
+        return cls(route=PresetRouteModel.from_domain(skipped.route), reason=skipped.reason)
+
+
+class RecallResultModel(BaseModel):
     routes: list[RouteModel]
+    skipped: list[SkippedRouteModel]

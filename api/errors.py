@@ -3,8 +3,8 @@ from fastapi.responses import JSONResponse
 
 from studio_midi.backend import AmbiguousPortError, PortNotFoundError
 from studio_midi.devices import DeviceNameTakenError
+from studio_midi.presets import PresetNotFoundError
 from studio_midi.router import ProcessedRouteNotImplementedError, SelfRouteBlockedError
-from studio_midi.scenes import SceneNotFoundError
 
 
 def register_exception_handlers(app: FastAPI) -> None:
@@ -30,6 +30,6 @@ def register_exception_handlers(app: FastAPI) -> None:
     def _device_name_taken(request: Request, exc: DeviceNameTakenError) -> JSONResponse:
         return JSONResponse(status_code=409, content={"detail": str(exc)})
 
-    @app.exception_handler(SceneNotFoundError)
-    def _scene_not_found(request: Request, exc: SceneNotFoundError) -> JSONResponse:
+    @app.exception_handler(PresetNotFoundError)
+    def _preset_not_found(request: Request, exc: PresetNotFoundError) -> JSONResponse:
         return JSONResponse(status_code=404, content={"detail": str(exc)})

@@ -35,6 +35,10 @@ export function fetchBlockedRoutes() {
   return getJSON('/api/routes/blocked')
 }
 
+export function fetchPresets() {
+  return getJSON('/api/presets')
+}
+
 async function sendJSON(method, path, body) {
   const response = await fetch(path, {
     method,
@@ -68,6 +72,19 @@ export function assignDevice(direction, port, device) {
     port_name: port.name,
     device,
   })
+}
+
+// Preset names travel in the body, since they may contain "/".
+export function savePreset(name) {
+  return sendJSON('PUT', '/api/presets', { name })
+}
+
+export function deletePreset(name) {
+  return sendJSON('DELETE', '/api/presets', { name })
+}
+
+export function recallPreset(name) {
+  return sendJSON('POST', '/api/presets/recall', { name })
 }
 
 export function unassignDevice(direction, port) {

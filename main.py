@@ -2,8 +2,8 @@ import argparse
 from studio_midi.backend import AlsaBackend
 from studio_midi.devices import DeviceStore
 from studio_midi.models import Endpoint, Route
+from studio_midi.presets import DeviceRef, PresetRoute, PresetStore, label
 from studio_midi.router import Router
-from studio_midi.scenes import SceneStore
 
 
 def make_route(source: str, destination: str) -> Route:
@@ -11,6 +11,17 @@ def make_route(source: str, destination: str) -> Route:
         source=Endpoint(device=source),
         destination=Endpoint(device=destination),
     )
+
+
+def parse_preset_route(value: str) -> PresetRoute:
+    try:
+        source, destination = value.split(":", maxsplit=1)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(
+            f"Invalid route {value!r}; expected source:destination"
+        ) from exc
+
+    return PresetRoute(source=DeviceRef(source), destination=DeviceRef(destination))
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -25,31 +36,22 @@ def build_parser() -> argparse.ArgumentParser:
     disconnect.add_argument("source")
     disconnect.add_argument("destination")
 
-    save_scene = commands.add_parser("save-scene")
-    save_scene.add_argument("name")
-    save_scene.add_argument(
+    save_preset = commands.add_parser("save-preset")
+    save_preset.add_argument("name")
+    save_preset.add_argument(
         "routes",
-        nargs="+",
-        help='Routes formatted as "source:destination"',
+        nargs="*",
+        type=parse_preset_route,
+        help='Routes between device names, formatted as "source:destination". '
+        "Defaults to the current routing.",
     )
 
-    activate_scene = commands.add_parser("activate-scene")
-    activate_scene.add_argument("name")
+    recall_preset = commands.add_parser("recall-preset")
+    recall_preset.add_argument("name")
 
-    commands.add_parser("list-scenes")
+    commands.add_parser("list-presets")
 
     return parser
-
-
-def parse_route(value: str) -> Route:
-    try:
-        source, destination = value.split(":", maxsplit=1)
-    except ValueError as exc:
-        raise argparse.ArgumentTypeError(
-            f"Invalid route {value!r}; expected source:destination"
-        ) from exc
-
-    return make_route(source, destination)
 
 
 def main() -> int:
@@ -57,7 +59,7 @@ def main() -> int:
 
     backend = AlsaBackend()
     router = Router(backend, DeviceStore())
-    scenes = SceneStore()
+    presets = PresetStore()
 
     try:
         match args.command:
@@ -71,17 +73,24 @@ def main() -> int:
                 router.disconnect(route)
                 print(f"Disconnected {args.source} → {args.destination}")
 
-            case "save-scene":
-                routes = {parse_route(value) for value in args.routes}
-                scenes.save(args.name, routes)
-                print(f"Saved scene {args.name!r}")
+            case "save-preset":
+                if args.routes:
+                    presets.save(args.name, args.routes)
+                else:
+                    presets.save_current(args.name, router)
+                print(f"Saved preset {args.name!r}")
 
-            case "activate-scene":
-                scenes.activate(args.name, router)
-                print(f"Activated scene {args.name!r}")
+            case "recall-preset":
+                skipped = presets.recall(args.name, router)
+                print(f"Recalled preset {args.name!r}")
+                for item in skipped:
+                    print(
+                        f"  skipped {label(item.route.source)} → "
+                        f"{label(item.route.destination)}: {item.reason}"
+                    )
 
-            case "list-scenes":
-                for name in scenes.list_names():
+            case "list-presets":
+                for name in presets.list_names():
                     print(name)
 
         return 0

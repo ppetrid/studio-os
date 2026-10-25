@@ -87,14 +87,14 @@ class Backend:
                     exact_matches.append(port)
 
         # Prefer exact names, so e.g. "MIDI 1" doesn't also match "MIDI 10".
-        # Endpoints from the UI and from scenes saved there always carry full
-        # names; substring matching is a convenience for loose CLI input.
+        # Endpoints from the UI and from presets always carry full names;
+        # substring matching is a convenience for loose CLI input.
         if exact_matches:
             matches = exact_matches
 
         if not matches:
             raise PortNotFoundError(
-                f"No {role} port matched {endpoint!r}"
+                f"No {role} port matched {_describe(endpoint)}"
             )
 
         if len(matches) > 1:
@@ -105,11 +105,18 @@ class Backend:
             )
 
             raise AmbiguousPortError(
-                f"Multiple {role} ports matched {endpoint!r}:\n"
+                f"Multiple {role} ports matched {_describe(endpoint)}:\n"
                 f"{descriptions}"
             )
 
         return matches[0]
+
+
+def _describe(endpoint: Endpoint) -> str:
+    if endpoint.port is None:
+        return repr(endpoint.device)
+
+    return repr(f"{endpoint.device} · {endpoint.port}")
 
 
 class AlsaBackend(Backend):

@@ -1,6 +1,6 @@
 from alsa_midi import PortInfo
 
-from .backend import Backend
+from .backend import AmbiguousPortError, Backend, PortNotFoundError
 from .devices import DeviceStore, PortRef
 from .models import Endpoint, Route
 
@@ -11,6 +11,16 @@ class ProcessedRouteNotImplementedError(NotImplementedError):
 
 class SelfRouteBlockedError(RuntimeError):
     pass
+
+
+# Reasons a route can't be made right now, which `replace_routes` skips
+# instead of failing on.
+_UNAVAILABLE_ROUTE_ERRORS = (
+    PortNotFoundError,
+    AmbiguousPortError,
+    SelfRouteBlockedError,
+    ProcessedRouteNotImplementedError,
+)
 
 
 def _endpoint(port: PortInfo) -> Endpoint:
@@ -91,25 +101,16 @@ class Router:
 
         self.backend.disconnect(source, destination)
 
-    def replace_routes(self, desired_routes: set[Route]) -> None:
+    def replace_routes(self, desired_routes: set[Route]) -> dict[Route, str]:
         """
         Reconcile the backend's connections with `desired_routes` as far as
         practical: remove obsolete connections, then add missing ones.
 
-        Every desired route is resolved and checked up front, so an unknown,
-        ambiguous or blocked port fails before anything has been changed.
+        Desired routes that can't be made right now (a port that isn't
+        plugged in or is ambiguous, a blocked self-route) are skipped rather
+        than failing the whole change, and returned with the reason why.
         """
-        desired = {}
-
-        for route in desired_routes:
-            if not route.is_direct:
-                raise ProcessedRouteNotImplementedError(
-                    f"Processor {route.processor!r} is not implemented yet"
-                )
-
-            source, destination = self._resolve(route)
-            self._check_allowed(source, destination)
-            desired[_connection_key(source, destination)] = (source, destination)
+        desired, skipped = self._resolve_all(desired_routes)
 
         current = {
             _connection_key(source, destination): (source, destination)
@@ -133,6 +134,43 @@ class Router:
                 except Exception:
                     pass
             raise
+
+        return skipped
+
+    def matches(self, desired_routes: set[Route]) -> bool:
+        """
+        Whether the current connections are exactly the routes from
+        `desired_routes` that could be made right now.
+        """
+        desired, _ = self._resolve_all(desired_routes)
+        current = {
+            _connection_key(source, destination)
+            for source, destination in self.backend.list_connections()
+        }
+        return desired.keys() == current
+
+    def _resolve_all(
+        self, routes: set[Route]
+    ) -> tuple[dict[tuple, tuple[PortInfo, PortInfo]], dict[Route, str]]:
+        resolved = {}
+        skipped = {}
+
+        for route in routes:
+            try:
+                if not route.is_direct:
+                    raise ProcessedRouteNotImplementedError(
+                        f"Processor {route.processor!r} is not implemented yet"
+                    )
+
+                source, destination = self._resolve(route)
+                self._check_allowed(source, destination)
+            except _UNAVAILABLE_ROUTE_ERRORS as exc:
+                skipped[route] = str(exc)
+                continue
+
+            resolved[_connection_key(source, destination)] = (source, destination)
+
+        return resolved, skipped
 
     def _resolve(self, route: Route) -> tuple[PortInfo, PortInfo]:
         return (

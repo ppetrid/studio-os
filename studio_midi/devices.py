@@ -58,6 +58,16 @@ class DeviceStore:
     def list(self) -> list[Device]:
         return sorted(self._load().values(), key=lambda device: device.name.casefold())
 
+    def get(self, name: str) -> Device | None:
+        return next(
+            (
+                device
+                for device in self._load().values()
+                if device.name.casefold() == name.casefold()
+            ),
+            None,
+        )
+
     def find(self, direction: Direction, port: PortRef) -> Device | None:
         return next(
             (

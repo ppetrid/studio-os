@@ -11,13 +11,14 @@ from fastapi.staticfiles import StaticFiles
 from studio_midi.backend import AlsaBackend, Backend
 from studio_midi.devices import DeviceStore
 from studio_midi.mock_backend import SEED_DEVICES, MockBackend
+from studio_midi.presets import PresetStore
 from studio_midi.router import Router
-from studio_midi.scenes import SceneStore
 
-from .endpoints import connections, ports, scenes
+from .endpoints import connections, ports, presets
 from .errors import register_exception_handlers
 
 MOCK_DEVICES_PATH = "mock_devices.json"
+MOCK_PRESETS_PATH = "mock_presets.json"
 
 
 def _mock_mode() -> bool:
@@ -49,7 +50,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.backend = backend
     app.state.devices = devices
     app.state.router = Router(backend, devices)
-    app.state.scenes = SceneStore()
+    # Kept apart in mock mode so presets of fake devices never end up in the
+    # tracked presets.json.
+    app.state.presets = PresetStore(path=MOCK_PRESETS_PATH) if _mock_mode() else PresetStore()
     try:
         yield
     finally:
@@ -70,7 +73,7 @@ def create_app() -> FastAPI:
 
     app.include_router(ports.router, prefix="/api/ports", tags=["ports"])
     app.include_router(connections.router, prefix="/api/routes", tags=["routes"])
-    app.include_router(scenes.router, prefix="/api/scenes", tags=["scenes"])
+    app.include_router(presets.router, prefix="/api/presets", tags=["presets"])
 
     frontend_dist = Path(__file__).resolve().parent.parent / "frontend" / "dist"
     if frontend_dist.is_dir():
