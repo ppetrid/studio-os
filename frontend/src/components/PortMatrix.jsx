@@ -21,19 +21,26 @@ const MIN_ROW_HEIGHT = '2.75rem'
 
 function portLabel(port) {
   const realName = `${port.client_name ?? '(unknown)'} · ${port.name}`
-  return port.alias ? `${port.alias} (${realName})` : realName
+  return port.device_name ? `${port.device_name} (${realName})` : realName
 }
 
-// Primary label: the alias when the port has one, else the device name.
+// Primary label: the user's device name when the port has one, else the
+// ALSA client name.
 function portPrimaryLabel(port) {
-  return port.alias || port.client_name || '(unknown)'
+  return port.device_name || port.client_name || '(unknown)'
 }
 
-// Secondary (muted) label: real device · port name, so the physical port
-// stays identifiable even when the primary label is an alias.
+// Secondary (muted) label: real client · port name, so the physical port
+// stays identifiable even when the primary label is a device name.
 function portSecondaryLabel(port) {
-  return port.alias ? `${port.client_name ?? '(unknown)'} · ${port.name}` : port.name
+  return port.device_name ? `${port.client_name ?? '(unknown)'} · ${port.name}` : port.name
 }
+
+const CELL_CONNECTED =
+  'block border-amber-300/40 bg-amber-400 shadow-[0_0_6px_2px_rgba(251,191,36,0.65)]'
+const CELL_BLOCKED = 'block cursor-not-allowed border-transparent bg-transparent'
+const CELL_OPEN =
+  'block border-neutral-700 bg-neutral-800 hover:border-neutral-500 hover:bg-neutral-700'
 
 function TapLabel({ id, tooltip, openId, onOpen, tooltipClassName, children }) {
   const isOpen = openId === id
@@ -59,7 +66,7 @@ function TapLabel({ id, tooltip, openId, onOpen, tooltipClassName, children }) {
   )
 }
 
-function PortMatrix({ sources, destinations, routes, pendingKeys, onToggle }) {
+function PortMatrix({ sources, destinations, routes, blockedRoutes, pendingKeys, onToggle }) {
   const [hoveredSource, setHoveredSource] = useState(null)
   const [hoveredDest, setHoveredDest] = useState(null)
   const [openTooltip, setOpenTooltip] = useState(null)
@@ -143,6 +150,9 @@ function PortMatrix({ sources, destinations, routes, pendingKeys, onToggle }) {
               {destinations.map((dest) => {
                 const destKey = portKey(dest)
                 const connected = Boolean(findRoute(routes, src, dest))
+                // A blocked route that's already connected (e.g. it predates
+                // naming the device) stays tappable, so it can be disconnected.
+                const blocked = !connected && Boolean(findRoute(blockedRoutes, src, dest))
                 const cellKey = `${srcKey}->${destKey}`
                 const pending = pendingKeys.has(cellKey)
 
@@ -161,17 +171,19 @@ function PortMatrix({ sources, destinations, routes, pendingKeys, onToggle }) {
                   >
                     <button
                       type="button"
-                      disabled={pending}
+                      disabled={pending || blocked}
                       onClick={() => onToggle(src, dest, connected)}
                       aria-pressed={connected}
-                      title={`${portLabel(src)} → ${portLabel(dest)}`}
+                      title={`${portLabel(src)} → ${portLabel(dest)}${
+                        blocked ? ' (blocked: same device)' : ''
+                      }`}
                       className={[
-                        'block h-full w-full rounded-sm border transition-all duration-100',
-                        pending ? 'cursor-wait opacity-50' : 'cursor-pointer',
-                        connected
-                          ? 'border-amber-300/40 bg-amber-400 shadow-[0_0_6px_2px_rgba(251,191,36,0.65)]'
-                          : 'border-neutral-700 bg-neutral-800 hover:border-neutral-500 hover:bg-neutral-700',
-                      ].join(' ')}
+                        'h-full w-full rounded-sm border transition-all duration-100',
+                        !blocked && (pending ? 'cursor-wait opacity-50' : 'cursor-pointer'),
+                        connected ? CELL_CONNECTED : blocked ? CELL_BLOCKED : CELL_OPEN,
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
                     />
                   </div>
                 )

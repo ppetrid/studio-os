@@ -1,5 +1,6 @@
 import argparse
 from studio_midi.backend import AlsaBackend
+from studio_midi.devices import DeviceStore
 from studio_midi.models import Endpoint, Route
 from studio_midi.router import Router
 from studio_midi.scenes import SceneStore
@@ -55,7 +56,7 @@ def main() -> int:
     args = build_parser().parse_args()
 
     backend = AlsaBackend()
-    router = Router(backend)
+    router = Router(backend, DeviceStore())
     scenes = SceneStore()
 
     try:

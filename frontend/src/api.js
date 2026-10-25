@@ -1,7 +1,20 @@
+// Prefer the API's own explanation (FastAPI's `detail`) over a bare status.
+async function errorMessage(response, fallback) {
+  try {
+    const body = await response.json()
+    if (typeof body.detail === 'string') {
+      return body.detail
+    }
+  } catch {
+    // Not a JSON body; use the fallback.
+  }
+  return fallback
+}
+
 async function getJSON(path) {
   const response = await fetch(path)
   if (!response.ok) {
-    throw new Error(`${path} returned ${response.status}`)
+    throw new Error(await errorMessage(response, `${path} returned ${response.status}`))
   }
   return response.json()
 }
@@ -18,6 +31,10 @@ export function fetchRoutes() {
   return getJSON('/api/routes')
 }
 
+export function fetchBlockedRoutes() {
+  return getJSON('/api/routes/blocked')
+}
+
 async function sendJSON(method, path, body) {
   const response = await fetch(path, {
     method,
@@ -25,7 +42,9 @@ async function sendJSON(method, path, body) {
     body: JSON.stringify(body),
   })
   if (!response.ok) {
-    throw new Error(`${method} ${path} returned ${response.status}`)
+    throw new Error(
+      await errorMessage(response, `${method} ${path} returned ${response.status}`),
+    )
   }
   if (response.status === 204) {
     return null
@@ -41,18 +60,18 @@ export function deleteRoute(route) {
   return sendJSON('DELETE', '/api/routes', route)
 }
 
-// `direction` is 'sources' or 'destinations': a port's alias as a source
-// is independent of its alias as a destination.
-export function setAlias(direction, port, alias) {
-  return sendJSON('PUT', `/api/aliases/${direction}`, {
+// `direction` is 'sources' or 'destinations'. Giving a source and a
+// destination the same device name links them as one device.
+export function assignDevice(direction, port, device) {
+  return sendJSON('PUT', `/api/ports/${direction}/device`, {
     client_name: port.client_name,
     port_name: port.name,
-    alias,
+    device,
   })
 }
 
-export function deleteAlias(direction, port) {
-  return sendJSON('DELETE', `/api/aliases/${direction}`, {
+export function unassignDevice(direction, port) {
+  return sendJSON('DELETE', `/api/ports/${direction}/device`, {
     client_name: port.client_name,
     port_name: port.name,
   })

@@ -29,17 +29,19 @@ SEED_PORTS = {
     ],
 }
 
-# A few fake devices pre-aliased, so the UI has something to show for the
-# feature out of the box. The rest are left unaliased on purpose, to also
-# exercise the fall-back-to-real-name path.
-SEED_ALIASES = {
-    "sources": {
-        "Hammond Xk-3": {"MIDI OUT 1": "Organ Rig Out"},
-        "Kurzweil PC-3X": {"MIDI OUT 1": "Stage Piano Out"},
+# A few fake ports pre-named as devices, so the UI has something to show
+# for the feature out of the box: one with its self-route blocked, one
+# allowing it. The rest are left unnamed on purpose, to also exercise the
+# fall-back-to-real-name path.
+SEED_DEVICES = {
+    "Organ Rig": {
+        "source": {"client_name": "Hammond Xk-3", "port_name": "MIDI OUT 1"},
+        "destination": {"client_name": "Hammond Xk-3", "port_name": "MIDI IN 1"},
     },
-    "destinations": {
-        "Hammond Xk-3": {"MIDI IN 1": "Organ Rig In"},
-        "Kurzweil PC-3X": {"MIDI IN 1": "Stage Piano In"},
+    "Stage Piano": {
+        "source": {"client_name": "Kurzweil PC-3X", "port_name": "MIDI OUT 1"},
+        "destination": {"client_name": "Kurzweil PC-3X", "port_name": "MIDI IN 1"},
+        "allow_self_route": True,
     },
 }
 

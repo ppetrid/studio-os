@@ -1,0 +1,22 @@
+{
+  "CP88 USB MIDI 1": {
+    "destination": {
+      "client_name": "CP88/CP73",
+      "port_name": "CP88/CP73 MIDI 1"
+    },
+    "source": {
+      "client_name": "CP88/CP73",
+      "port_name": "CP88/CP73 MIDI 1"
+    }
+  },
+  "CP88 USB MIDI 2": {
+    "destination": {
+      "client_name": "CP88/CP73",
+      "port_name": "CP88/CP73 MIDI 2"
+    },
+    "source": {
+      "client_name": "CP88/CP73",
+      "port_name": "CP88/CP73 MIDI 2"
+    }
+  }
+}

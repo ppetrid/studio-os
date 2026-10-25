@@ -1,23 +1,25 @@
 import { useState } from 'react'
-import { deleteAlias, setAlias } from '../api'
+import { assignDevice, unassignDevice } from '../api'
 
-function PortRow({ port, direction, onAliasChange }) {
+const OTHER_SIDE = { sources: 'destination', destinations: 'source' }
+
+function PortRow({ port, direction, onDeviceChange }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState(null)
 
   const startEditing = () => {
-    setDraft(port.alias ?? '')
+    setDraft(port.device_name ?? '')
     setError(null)
     setEditing(true)
   }
 
   const save = async (event) => {
     event.preventDefault()
-    const alias = draft.trim()
+    const name = draft.trim()
 
-    if (alias === (port.alias ?? '')) {
+    if (name === (port.device_name ?? '')) {
       setEditing(false)
       return
     }
@@ -26,13 +28,16 @@ function PortRow({ port, direction, onAliasChange }) {
     setError(null)
 
     try {
-      // An empty name clears the alias, falling back to the real name.
-      if (alias) {
-        await setAlias(direction, port, alias)
+      // An empty name unassigns the port, falling back to the real name.
+      if (name) {
+        // The backend may return an existing device's canonical spelling
+        // (names match case-insensitively).
+        const device = await assignDevice(direction, port, name)
+        onDeviceChange(port, device.name)
       } else {
-        await deleteAlias(direction, port)
+        await unassignDevice(direction, port)
+        onDeviceChange(port, null)
       }
-      onAliasChange(port, alias || null)
       setEditing(false)
     } catch (err) {
       setError(err.message)
@@ -76,7 +81,8 @@ function PortRow({ port, direction, onAliasChange }) {
             <span className="text-red-400">{error}</span>
           ) : (
             <>
-              {port.client_name ?? '(unknown)'} · {port.name} — leave empty to use the real name
+              Use the same name on its {OTHER_SIDE[direction]} to link them as one device ·
+              leave empty for the real name
             </>
           )}
         </div>
@@ -89,16 +95,16 @@ function PortRow({ port, direction, onAliasChange }) {
       <div className="min-w-0 flex-1">
         <div className="flex min-w-0 items-center gap-1.5">
           <span className="min-w-0 truncate font-medium text-neutral-100">
-            {port.alias || port.client_name || '(unknown)'}
+            {port.device_name || port.client_name || '(unknown)'}
           </span>
-          {port.alias && (
+          {port.device_name && (
             <span className="shrink-0 rounded bg-neutral-800 px-1 text-[10px] font-semibold tracking-wide text-neutral-400 uppercase">
-              Alias
+              Device
             </span>
           )}
         </div>
         <div className="truncate text-sm text-neutral-400">
-          {port.alias
+          {port.device_name
             ? `${port.client_name ?? '(unknown)'} · ${port.name}`
             : port.name}{' '}
           <span className="text-neutral-600">
@@ -119,7 +125,7 @@ function PortRow({ port, direction, onAliasChange }) {
   )
 }
 
-function PortList({ title, direction, ports, loading, error, onAliasChange }) {
+function PortList({ title, direction, ports, loading, error, onDeviceChange }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-neutral-800 bg-neutral-900 p-2">
       <h2 className="mb-1 shrink-0 text-sm font-semibold text-neutral-200">{title}</h2>
@@ -137,7 +143,7 @@ function PortList({ title, direction, ports, loading, error, onAliasChange }) {
               key={`${port.client_id}:${port.port_id}`}
               port={port}
               direction={direction}
-              onAliasChange={onAliasChange}
+              onDeviceChange={onDeviceChange}
             />
           ))}
         </ul>

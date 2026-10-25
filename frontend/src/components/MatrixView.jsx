@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
-import { createRoute, deleteRoute, fetchDestinations, fetchRoutes, fetchSources } from '../api'
+import {
+  createRoute,
+  deleteRoute,
+  fetchBlockedRoutes,
+  fetchDestinations,
+  fetchRoutes,
+  fetchSources,
+} from '../api'
 import { portKey, portToEndpoint, routesEqual } from '../routeUtils'
 import PortMatrix from './PortMatrix'
 
@@ -7,6 +14,7 @@ function MatrixView() {
   const [sources, setSources] = useState([])
   const [destinations, setDestinations] = useState([])
   const [routes, setRoutes] = useState([])
+  const [blockedRoutes, setBlockedRoutes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [pendingKeys, setPendingKeys] = useState(new Set())
@@ -14,11 +22,12 @@ function MatrixView() {
   const load = useCallback(() => {
     setLoading(true)
     setError(null)
-    Promise.all([fetchSources(), fetchDestinations(), fetchRoutes()])
-      .then(([sourcePorts, destinationPorts, existingRoutes]) => {
+    Promise.all([fetchSources(), fetchDestinations(), fetchRoutes(), fetchBlockedRoutes()])
+      .then(([sourcePorts, destinationPorts, existingRoutes, blocked]) => {
         setSources(sourcePorts)
         setDestinations(destinationPorts)
         setRoutes(existingRoutes)
+        setBlockedRoutes(blocked)
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false))
@@ -67,6 +76,7 @@ function MatrixView() {
             sources={sources}
             destinations={destinations}
             routes={routes}
+            blockedRoutes={blockedRoutes}
             pendingKeys={pendingKeys}
             onToggle={toggle}
           />

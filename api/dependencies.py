@@ -1,7 +1,7 @@
 from fastapi import Request
 
-from studio_midi.aliases import AliasStore
 from studio_midi.backend import Backend
+from studio_midi.devices import DeviceStore
 from studio_midi.router import Router
 from studio_midi.scenes import SceneStore
 
@@ -18,5 +18,5 @@ def get_scene_store(request: Request) -> SceneStore:
     return request.app.state.scenes
 
 
-def get_alias_store(request: Request) -> AliasStore:
-    return request.app.state.aliases
+def get_device_store(request: Request) -> DeviceStore:
+    return request.app.state.devices

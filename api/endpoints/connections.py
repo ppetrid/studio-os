@@ -25,6 +25,12 @@ def list_routes(midi_router: Router = Depends(get_midi_router)):
     return [RouteModel.from_domain(route) for route in routes]
 
 
+@router.get("/blocked", response_model=list[RouteModel])
+def list_blocked_routes(midi_router: Router = Depends(get_midi_router)):
+    routes = sorted(midi_router.blocked_routes, key=_sort_key)
+    return [RouteModel.from_domain(route) for route in routes]
+
+
 @router.post("", response_model=RouteModel, status_code=status.HTTP_201_CREATED)
 def create_route(route: RouteModel, midi_router: Router = Depends(get_midi_router)):
     domain_route = route.to_domain()

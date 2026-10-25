@@ -3,6 +3,7 @@ from typing import Annotated
 from alsa_midi import PortInfo
 from pydantic import BaseModel, StringConstraints
 
+from studio_midi.devices import Device, PortRef
 from studio_midi.models import Endpoint, Route
 
 
@@ -44,16 +45,16 @@ class PortModel(BaseModel):
     port_id: int | None
     client_name: str | None
     name: str
-    alias: str | None = None
+    device_name: str | None = None
 
     @classmethod
-    def from_domain(cls, port: PortInfo, alias: str | None = None) -> "PortModel":
+    def from_domain(cls, port: PortInfo, device_name: str | None = None) -> "PortModel":
         return cls(
             client_id=port.client_id,
             port_id=port.port_id,
             client_name=port.client_name,
             name=port.name,
-            alias=alias,
+            device_name=device_name,
         )
 
 
@@ -61,9 +62,34 @@ class PortRefModel(BaseModel):
     client_name: str
     port_name: str
 
+    def to_domain(self) -> PortRef:
+        return PortRef(client_name=self.client_name, port_name=self.port_name)
 
-class AliasModel(PortRefModel):
-    alias: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+    @classmethod
+    def from_domain(cls, ref: PortRef) -> "PortRefModel":
+        return cls(client_name=ref.client_name, port_name=ref.port_name)
+
+
+class DeviceAssignmentModel(PortRefModel):
+    device: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
+
+
+class DeviceModel(BaseModel):
+    name: str
+    source: PortRefModel | None
+    destination: PortRefModel | None
+    allow_self_route: bool
+
+    @classmethod
+    def from_domain(cls, device: Device) -> "DeviceModel":
+        return cls(
+            name=device.name,
+            source=PortRefModel.from_domain(device.source) if device.source else None,
+            destination=(
+                PortRefModel.from_domain(device.destination) if device.destination else None
+            ),
+            allow_self_route=device.allow_self_route,
+        )
 
 
 class SceneModel(BaseModel):

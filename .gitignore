@@ -6,6 +6,6 @@ frontend/dist/
 
 mock_connections.json
 mock_ports.json
-mock_aliases.json
+mock_devices.json
 
 __pycache__

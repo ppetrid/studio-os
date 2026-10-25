@@ -20,19 +20,19 @@ function usePorts(fetcher) {
     load()
   }, [load])
 
-  // Aliases are keyed by real names, so every listed port sharing them
-  // (e.g. two identical devices) picks up the change.
-  const onAliasChange = useCallback((target, alias) => {
+  // Devices refer to ports by real names, so every listed port sharing them
+  // (e.g. two identical units) picks up the change.
+  const onDeviceChange = useCallback((target, deviceName) => {
     setPorts((prev) =>
       prev.map((port) =>
         port.client_name === target.client_name && port.name === target.name
-          ? { ...port, alias }
+          ? { ...port, device_name: deviceName }
           : port,
       ),
     )
   }, [])
 
-  return { ports, loading, error, reload: load, onAliasChange }
+  return { ports, loading, error, reload: load, onDeviceChange }
 }
 
 function InfoView() {
