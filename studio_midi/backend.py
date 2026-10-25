@@ -62,6 +62,7 @@ class Backend:
         port_query = endpoint.port.casefold() if endpoint.port else None
 
         matches: list[PortInfo] = []
+        exact_matches: list[PortInfo] = []
 
         for port in ports:
             client_name = port.client_name.casefold()
@@ -79,6 +80,17 @@ class Backend:
 
             if device_matches and port_matches:
                 matches.append(port)
+
+                if client_name == device_query and (
+                    port_query is None or port_name == port_query
+                ):
+                    exact_matches.append(port)
+
+        # Prefer exact names, so e.g. "MIDI 1" doesn't also match "MIDI 10".
+        # Endpoints from the UI and from scenes saved there always carry full
+        # names; substring matching is a convenience for loose CLI input.
+        if exact_matches:
+            matches = exact_matches
 
         if not matches:
             raise PortNotFoundError(

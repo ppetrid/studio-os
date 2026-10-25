@@ -17,7 +17,7 @@ STUDIO_MIDI_BACKEND=mock uvicorn api.app:app --reload
 ### UI
 
 ```shell
-cd frontent
+cd frontend
 npm run dev
 ```
 
