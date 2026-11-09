@@ -2,7 +2,10 @@
 .idea/
 
 frontend/node_modules/
-frontend/dist/
+
+# Live config, edited through the UI on each machine.
+devices.json
+presets.json
 
 mock_connections.json
 mock_ports.json

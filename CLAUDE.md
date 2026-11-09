@@ -40,9 +40,18 @@ npm run lint      # oxlint (.oxlintrc.json)
 npm run build     # outputs frontend/dist; FastAPI serves it at / when present
 ```
 
+```shell
+deploy/install.sh   # on the Pi, in a clone: sets up .venv, installs + restarts the systemd service
+```
+
+**Deployment:** the Pi runs a git clone, and updating it means `git pull && deploy/install.sh`. The Pi has no Node, so **`frontend/dist` is committed**. Run `npm run build` and commit `dist` together with any `frontend/src` change, or the Pi keeps serving the old UI.
+- `deploy/install.sh` renders `deploy/studio-os.service` (filling the `@USER@`/`@APP_DIR@`/`@PORT@` placeholders) into `/etc/systemd/system/`, then restarts the service and checks that it responds.
+- Production is a single uvicorn process serving both `frontend/dist` and `/api`, with no nginx.
+- `devices.json` and `presets.json` are gitignored. They're live config edited through the UI, so each machine keeps its own. Any new data file should be gitignored too, or `git pull` on the Pi will conflict with it.
+
 There is no test suite and no Python linter or formatter config yet. To check real ALSA routing, compare against `aconnect -l`.
 
-In development, open `:5173`. If `frontend/dist` exists, `:8000/` serves that old build, not your current source.
+In development, open `:5173`. `:8000/` serves the committed `frontend/dist` build, not your current source.
 
 ## Architecture
 
@@ -79,7 +88,7 @@ The backend is a Python package, `studio_midi/`, with no web dependencies. A thi
   - **Format:** each route end is a `DeviceRef(name)` or a `PortRef` for ports without a device. On disk that's `{name: [{"source": {"device": "CP88"} | {"client_name", "port_name"}, "destination": …}]}`.
   - **Saving:** `save_current()` snapshots `Router.routes` with `capture()`. A port belonging to a device in that direction is stored as the device name.
   - **Recalling:** `recall()` turns device names into their current ports, then calls `replace_routes`. It returns `SkippedRoute`s for an unknown device, a device missing that direction, and anything `replace_routes` skipped.
-- **Stores:** `DeviceStore` and `PresetStore` are JSON-file stores that re-read the file on every call. They default to `devices.json` and `presets.json` relative to the CWD. In mock mode they use `mock_devices.json` and `mock_presets.json`, so presets of fake devices never land in the tracked file.
+- **Stores:** `DeviceStore` and `PresetStore` are JSON-file stores that re-read the file on every call. They default to `devices.json` and `presets.json` relative to the CWD. In mock mode they use `mock_devices.json` and `mock_presets.json`, so presets of fake devices never land in the real files.
 
 ### `api/`
 

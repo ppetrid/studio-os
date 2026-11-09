@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.devices = devices
     app.state.router = Router(backend, devices)
     # Kept apart in mock mode so presets of fake devices never end up in the
-    # tracked presets.json.
+    # real presets.json.
     app.state.presets = PresetStore(path=MOCK_PRESETS_PATH) if _mock_mode() else PresetStore()
     try:
         yield
